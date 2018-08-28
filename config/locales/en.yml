@@ -53,7 +53,7 @@ en:
         When first launching the app choose the "%{server_name}" server and log in with %{email}.
       link_text: set a password
       app_link_text: ExpirySync at GooglePlay
-      server_name: Advanced 
+      server_name: Advanced 2 
 
   activerecord:
     models:

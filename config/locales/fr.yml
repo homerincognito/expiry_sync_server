@@ -57,7 +57,7 @@ fr:
         "%{server_name}" et connectez-vous avec %{email}.
       link_text: définir un mot de passe
       app_link_text: ExpirySync sur Google Play
-      server_name: Avancé 
+      server_name: Avancé 2 
   activerecord:
     models:
       alternate_server:

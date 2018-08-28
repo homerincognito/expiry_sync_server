@@ -52,7 +52,7 @@ de:
         Beim ersten Start der App wählen Sie den Server "%{server_name}" und loggen sich dann mit dem Benuzter %{email} ein.
       link_text: Passwort vergeben
       app_link_text: ExpirySync bei GooglePlay
-      server_name: Erweitert 
+      server_name: Erweitert 2 
 
   activerecord:
     models:
