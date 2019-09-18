@@ -46,8 +46,12 @@ module RemoteArticleFetcher
           data[:images_attributes] << {source_url: url}
         end
 
-        more_button = wd.find_element(:css => '.product-info-item-list.show-hide div.show-hide-more')
-        more_button.click
+        begin
+		more_button = wd.find_element(:css => '.product-info-item-list.show-hide div.show-hide-more')
+        	more_button.click
+	rescue
+		# already expanded
+	end
 
         # wait until details are expanded:
         begin
