@@ -1,5 +1,6 @@
-require 'open-uri'
 require 'remote_article_fetcher/fetcher'
+require 'rubygems'
+require 'selenium-webdriver'
 
 module RemoteArticleFetcher
   module Fetchers
@@ -9,28 +10,33 @@ module RemoteArticleFetcher
       def self.fetch(data)
         data = data.deep_dup
 
-        url = "#{BASE_URL}/product.search?q=#{data[:barcode]}&OK=Suchen"
+        url = BASE_URL
         #fetch URL
         Rails.logger.info "Fetching: " + url
-        begin
-          stream = open(url)
-        rescue OpenURI::HTTPError
-          Rails.logger.info "Could not fetch url"
+        
+        # TODO: Switch to chrome headless (phantomjs is deprecated):
+        Selenium::WebDriver::PhantomJS.path = 'bin/phantomjs'
+        wd = Selenium::WebDriver.for :phantomjs
+        wait = Selenium::WebDriver::Wait.new(:timeout => 15)
+        wd.get url
+        wd.find_element(:id, 'search-query').click
+        wd.find_element(:id, 'search-query').send_keys data[:barcode]
+        wd.find_element(:id, 'search-submit').click
+        
+        
+        elem = wait.until { wd.find_element(:css => 'div.page-title h1') }
+        data[:name] = elem.text.strip
+        if data[:name] == "Suchresultate #{data[:barcode]}" # codecheck info acts as if the product exists, returning this dummy name
+          wd.quit
+          return nil
         end
 
-        return nil if stream.nil?
+        data[:images_attributes]= Array.new
+        imageNode = wd.find_element(:css, 'div.product-image img')
 
-        doc = Nokogiri::HTML(stream)
-        return nil if doc.nil?
-        elem = doc.at_css('div.page-title h1')
-        return nil if elem.nil?
-        data[:name] = elem.text.strip
-        return nil if data[:name] == "Suchresultate #{data[:barcode]}" # codecheck info acts as if the product exists, returning this dummy name
-
-        data[:images_attributes] = Array.new
-        imageNode = doc.at_css('div.product-image img')
+        
         unless imageNode.nil? or imageNode.attribute("src").nil?
-          url = imageNode.attribute("src").value
+          url = imageNode.attribute("src")
           if url.start_with?('/')
             url = BASE_URL + url
           elsif not url.start_with?('http')
@@ -40,16 +46,24 @@ module RemoteArticleFetcher
           data[:images_attributes] << {source_url: url}
         end
 
-        doc.css('div.product-info-item').each do |infoNode|
-          labelNode = infoNode.at_css('p.product-info-label')
-          next if labelNode.nil? or labelNode.text != "Hersteller / Vertrieb" or labelNode.next_element.nil?
+        more_button = wd.find_element(:css => '.product-info-item-list.show-hide div.show-hide-more')
+        more_button.click
 
-          data[:producer_attributes] = {name: labelNode.next_element.text.strip}
-          break
+        # wait until details are expanded:
+        begin
+          producer_elem = wait.until do 
+            currentElem = wd.find_element(:xpath => "//*/text()[normalize-space(.)='Hersteller / Vertrieb']/../following-sibling::*") 
+            return nil if currentElem.text.strip == ''
+            currentElem
+          end
+          data[:producer_attributes] = {name: producer_elem.text.strip}
+        rescue
+          # just continue, if there are no producer details
         end
 
 
         Rails.logger.info "Done fetching"
+        wd.quit
 
         data
       end
