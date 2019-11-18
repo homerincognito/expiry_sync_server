@@ -24,6 +24,11 @@ class User < ActiveRecord::Base
   cattr_accessor :email_is_required
   @@email_is_required = false # will only be required upon update
 
+  def username
+    return nil if self[:username].nil?
+    self[:username].force_encoding('UTF-8')
+  end
+
   def email_required?
     @@email_is_required
   end
