@@ -99,7 +99,8 @@ ExpirySyncServer::Application.configure do
     config.action_mailer.smtp_settings = {
       user_name: ENV['SMTP_USER'],
       password: ENV['SMTP_PASS'],
-      address: ENV['SMTP_SERVER']
+      address: ENV['SMTP_SERVER'],
+      port: ENV['SMTP_PORT']
     }
   end
 end
